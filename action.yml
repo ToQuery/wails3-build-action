@@ -204,6 +204,13 @@ runs:
       run: chmod +x build/bin/*
       shell: bash
     # Package and Sign MacOS
+    - name: Package App
+      if: inputs.build == 'true'
+      env:
+        BUILD_OPTIONS: ${{ steps.build_options.outputs.BUILD_OPTIONS }}
+      working-directory: ${{ inputs.app-working-directory }}
+      run: wails3 package
+      shell: bash
     - name: Import Code-Signing Certificates for macOS
       if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
       uses: Apple-Actions/import-codesign-certs@v1
