@@ -31,6 +31,10 @@ inputs:
     description: "Platform to build for"
     required: false
     default: "darwin/universal"
+  build-version:
+    description: "Version of app being built"
+    required: false
+    default: "1.0.0"
   build-tags:
     description: "Build tags to pass to Go compiler. Must be quoted. Space or comma (but not both) separated"
     required: false
@@ -191,6 +195,14 @@ runs:
       run: brew install mitchellh/gon/gon
       shell: bash
     # Building step
+    - name: Set App Version
+      if: inputs.build == 'true'
+      env:
+        VERSION: ${{ inputs.build-version }}
+      run: |
+        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
+        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION " build/darwin/Info.plist
+      shell: bash
     - name: Build App
       if: inputs.build == 'true'
       env:
