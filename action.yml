@@ -12,6 +12,10 @@ inputs:
     description: "Sign the build"
     required: false
     default: "false"
+  sign-sparkle:
+    description: "Sign the sparkle framework"
+    required: false
+    default: "false"
   notarize:
     description: "notarize the build"
     required: false
@@ -251,6 +255,18 @@ runs:
       run: |
         echo "Signing Package"
         gon -log-level=info ./build/darwin/gon-sign.json
+    - name: Sign sparkle framework
+      if: runner.os == 'macOS' && inputs.sign-sparkle != 'false' && startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      working-directory: ${{ inputs.app-working-directory }}
+      env:
+        CODE_SIGN_IDENTITY: ${{ inputs.sign-macos-app-id }}
+      run: |
+        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc
+        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime --preserve-metadata=entitlements bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc
+        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
+        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app
+        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
     - name: Build .app zip file
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
