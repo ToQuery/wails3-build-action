@@ -15,7 +15,7 @@ inputs:
   sign-sparkle:
     description: "Sign the sparkle framework"
     required: false
-    default: "false"
+    default: "true"
   notarize:
     description: "notarize the build"
     required: false
