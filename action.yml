@@ -254,15 +254,6 @@ runs:
         p12-file-base64: ${{ inputs.sign-macos-installer-cert }}
         p12-password: ${{ inputs.sign-macos-installer-cert-password }}
         create-keychain: false
-    - name: Sign our macOS binary
-      if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
-      run: |
-        echo "Signing Package"
-        gon -log-level=info ./build/darwin/gon-sign.json
     - name: Sign sparkle framework
       if: runner.os == 'macOS' && inputs.sign-sparkle != 'false' && startsWith(github.ref, 'refs/tags/')
       shell: bash
@@ -275,6 +266,15 @@ runs:
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
+    - name: Sign our macOS binary
+      if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      working-directory: ${{ inputs.app-working-directory }}
+      env:
+        APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
+      run: |
+        echo "Signing Package"
+        gon -log-level=info ./build/darwin/gon-sign.json
     - name: Build .app zip file
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
