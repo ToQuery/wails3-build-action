@@ -302,7 +302,7 @@ runs:
         TEAM_ID: ${{ inputs.sign-macos-app-team-id }}
         APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
       run: |
-        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app.zip
+        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app.zip
     # Windows signing
     - name: Sign Windows binaries
       shell: powershell
@@ -322,6 +322,4 @@ runs:
       if: inputs.package == 'true'
       with:
         name: Wails Build ${{runner.os}} ${{inputs.build-name}}
-        path: |
-          ./bin/
-          *\bin\*
+        path: ./bin/${{inputs.build-name}}.app.zip
