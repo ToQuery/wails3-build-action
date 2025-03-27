@@ -307,6 +307,7 @@ runs:
         
         
         # sign dmg for sparkle and format to json and export to GH output
+        echo "signing with sparkle sign_update..."
         ./sparkle/bin/sign_update $DMG_FILE_NAME
         SIG=$(./sparkle/bin/sign_update $DMG_FILE_NAME)
         echo "signature output is $SIG"
