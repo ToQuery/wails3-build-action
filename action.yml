@@ -208,7 +208,7 @@ runs:
       shell: bash
     - name: Install macOS Wails deps
       if: runner.os == 'macOS'
-      run: brew install mitchellh/gon/gon
+      run: brew install create-dmg
       shell: bash
     # Building step
     - name: Set App Version
@@ -218,13 +218,6 @@ runs:
       run: |
         /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
-      shell: bash
-    - name: Build App
-      if: inputs.build == 'true'
-      env:
-        BUILD_OPTIONS: ${{ steps.build_options.outputs.BUILD_OPTIONS }}
-      working-directory: ${{ inputs.app-working-directory }}
-      run: wails3 build
       shell: bash
     - name: Add Linux perms
       if: inputs.build == 'true' && runner.os  == 'Linux'
@@ -266,34 +259,38 @@ runs:
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
-    - name: Sign our macOS binary
-      if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
-      run: |
-        echo "Signing Package"
-        gon -log-level=info ./build/darwin/gon-sign.json
-    - name: Build .app zip file
+        
+        codesign -f -s "$CODE_SIGN_IDENTITY" --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
+    - name: Build .app DMG file
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
+      env:
+        APP_NAME: ${{inputs.build-name}}
       shell: bash
       run: |
-        ditto -c -k --keepParent ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app.zip
-    - name: Building Installer
-      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.sign-macos-installer-id != '' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      run: |
-        productbuild --sign '${{inputs.sign-macos-installer-id}}' --component ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app /Applications ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.pkg
-    - name: Building Installer
-      if: runner.os == 'macOS' && inputs.sign-macos-installer-id == '' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      run: |
-        productbuild --component ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app /Applications ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.pkg
-    - name: Notarising Installer and zip
+        DMG_FILE_NAME="${APP_NAME}.dmg"
+        VOLUME_NAME="${APP_NAME}"
+        SOURCE_FOLDER_PATH="bin/"
+
+        # Create the DMG
+        create-dmg \
+          --volname "${VOLUME_NAME}" \
+          --background "build/darwin/installer_background.png" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "${APP_NAME}.app" 200 190 \
+          --hide-extension "${APP_NAME}.app" \
+          --app-drop-link 600 185 \
+          "${DMG_FILE_NAME}" \
+          "${SOURCE_FOLDER_PATH}"
+        
+        # delete .app
+        rm -rf bin/${{inputs.build-name}}.app
+        
+        # relocate dmg
+        mv $DMG_FILE_NAME bin
+    - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
@@ -302,7 +299,7 @@ runs:
         TEAM_ID: ${{ inputs.sign-macos-app-team-id }}
         APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
       run: |
-        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m ${{ inputs.app-working-directory }}/bin/${{inputs.build-name}}.app.zip
+        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m bin/${{inputs.build-name}}.dmg
     # Windows signing
     - name: Sign Windows binaries
       shell: powershell
@@ -322,4 +319,4 @@ runs:
       if: inputs.package == 'true'
       with:
         name: Wails Build ${{runner.os}} ${{inputs.build-name}}
-        path: ./bin/${{inputs.build-name}}.app.zip
+        path: ./bin/${{inputs.build-name}}.dmg
