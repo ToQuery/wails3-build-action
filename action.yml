@@ -271,6 +271,9 @@ runs:
         DMG_FILE_NAME="${APP_NAME}.dmg"
         VOLUME_NAME="${APP_NAME}"
         SOURCE_FOLDER_PATH="bin/"
+        
+        # remove loose binary
+        rm "bin/${APP_NAME}"
 
         # Create the DMG
         create-dmg \
@@ -285,11 +288,6 @@ runs:
           "${DMG_FILE_NAME}" \
           "${SOURCE_FOLDER_PATH}"
         
-        # delete .app and binary
-        rm -rf bin
-        
-        # relocate dmg
-        mkdir bin
         mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
