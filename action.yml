@@ -260,7 +260,7 @@ runs:
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
         
-        codesign -f -s "$CODE_SIGN_IDENTITY" --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
+        codesign -f -s "$CODE_SIGN_IDENTITY" --timestamp --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
     - name: Build .app DMG file
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
@@ -285,8 +285,9 @@ runs:
           "${DMG_FILE_NAME}" \
           "${SOURCE_FOLDER_PATH}"
         
-        # delete .app
+        # delete .app and binary
         rm -rf bin/${{inputs.build-name}}.app
+        rm bin/${{inputs.build-name}}
         
         # relocate dmg
         mv $DMG_FILE_NAME bin
