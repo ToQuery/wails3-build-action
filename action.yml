@@ -307,7 +307,11 @@ runs:
         
         
         # sign dmg for sparkle and format to json and export to GH output
-        ./sparkle/bin/sign_update $DMG_FILE_NAME | sed -E 's/sparkle:edSignature=([^ ]*) length=([0-9]*)/SIGNATURE={"signature":"\1","byteLength":\2}/' >> $GITHUB_OUTPUT
+        ./sparkle/bin/sign_update $DMG_FILE_NAME
+        SIG=$(./sparkle/bin/sign_update $DMG_FILE_NAME)
+        echo "signature output is $SIG"
+        echo "parsing..."
+        echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/' >> $GITHUB_OUTPUT
         
         mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
