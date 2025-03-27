@@ -15,6 +15,17 @@ inputs:
   sign-sparkle:
     description: "Sign the sparkle framework"
     required: false
+  sparkle-signing-key:
+    description: "Signing key for Sparkle"
+    required: false
+    default: "true"
+  app-upload-url:
+    description: "URL to send appcasts"
+    required: false
+    default: "true"
+  app-upload-handshake:
+    description: "handshake for app upload"
+    required: false
     default: "true"
   notarize:
     description: "notarize the build"
@@ -208,7 +219,7 @@ runs:
       shell: bash
     - name: Install macOS Wails deps
       if: runner.os == 'macOS'
-      run: brew install create-dmg
+      run: brew install create-dmg jq
       shell: bash
     # Building step
     - name: Set App Version
@@ -252,8 +263,13 @@ runs:
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
       env:
+        SPARKLE_KEY: ${{inputs.sparkle-signing-key}}
         CODE_SIGN_IDENTITY: ${{ inputs.sign-macos-app-id }}
       run: |
+        # load sparkle keys to keychain
+        echo $SPARKLE_KEY >> sparkle.key
+        ./sparkle/bin/generate_keys -f ./sparkle.key
+        
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime --preserve-metadata=entitlements bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
@@ -262,6 +278,7 @@ runs:
         
         codesign -f -s "$CODE_SIGN_IDENTITY" --timestamp --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
     - name: Build .app DMG file
+      id: dmg-sparkle
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
       env:
@@ -288,6 +305,10 @@ runs:
           "${DMG_FILE_NAME}" \
           "${SOURCE_FOLDER_PATH}"
         
+        
+        # sign dmg for sparkle and format to json and export to GH output
+        ./sparkle/bin/sign_update $DMG_FILE_NAME | sed -E 's/sparkle:edSignature=([^ ]*) length=([0-9]*)/SIGNATURE={"signature":"\1","byteLength":\2}/' >> $GITHUB_OUTPUT
+        
         mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
@@ -299,6 +320,26 @@ runs:
         APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
       run: |
         xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m bin/${{inputs.build-name}}.dmg
+        xcrun stapler staple bin/${{inputs.build-name}}.dmg
+
+    - name: Upload app for sparkle
+      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      working-directory: ${{ inputs.app-working-directory }}
+      env:
+        JSON: ${{ steps.dmg-sparkle.outputs.SIGNATURE }}"
+        URL: ${{inputs.app-upload-url}}
+        HANDSHAKE: ${{inputs.app-upload-handshake}}
+      run: |
+        # First, base64 encode the file and store it in a variable
+        B64_CONTENT=$(base64 -i bin/${{inputs.build-name}}.dmg)
+        BODY=$( echo $JSON | jq '. + { "version": "${{ inputs.build-tags }}",  }')
+
+        # Then make the curl request
+        curl -X POST $URL \
+          -H 'Content-Type: application/json' \
+          -H 'x-app-version-handshake: $HANDSHAKE' \
+          -d $BODY
     # Windows signing
     - name: Sign Windows binaries
       shell: powershell
