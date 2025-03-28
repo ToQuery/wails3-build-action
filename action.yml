@@ -305,8 +305,7 @@ runs:
         # sign dmg for sparkle and format to json and export to GH output
         echo "signing with sparkle sign_update..."
         echo $SPARKLE_KEY > sparkle.key
-        ./sparkle/bin/sign_update -f ./sparkle.key $DMG_FILE_NAME
-        SIG=$(./sparkle/bin/sign_update $DMG_FILE_NAME)
+        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key $DMG_FILE_NAME)
         echo "signature output is $SIG"
         echo "parsing..."
         echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/' >> $GITHUB_OUTPUT
