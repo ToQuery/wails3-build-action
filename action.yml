@@ -22,10 +22,12 @@ inputs:
     description: "Signing key for Sparkle"
     required: false
     default: "true"
+  appcast-url:
+    description: "URL to check for app updates"
+    required: false
   app-upload-url:
     description: "URL to send appcasts"
     required: false
-    default: "true"
   app-upload-handshake:
     description: "handshake for app upload"
     required: false
@@ -225,13 +227,15 @@ runs:
       run: brew install create-dmg jq
       shell: bash
     # Building step
-    - name: Set App Version
+    - name: Set App Version & Updates
       if: inputs.build == 'true'
       env:
         VERSION: ${{ inputs.build-version }}
+        APPCAST_URL: ${{inputs.appcast-url}}
       run: |
         /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
+        /usr/libexec/PlistBuddy -c "Set :SUFeedURL $APPCAST_URL" build/darwin/Info.plist
       shell: bash
     - name: Add Linux perms
       if: inputs.build == 'true' && runner.os  == 'Linux'
