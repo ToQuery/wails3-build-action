@@ -334,19 +334,32 @@ runs:
         URL: ${{inputs.app-upload-url}}
         HANDSHAKE: ${{inputs.app-upload-handshake}}
       run: |
-        # First, base64 encode the file and store it in a variable
-        B64_CONTENT=$(base64 -i bin/${{inputs.build-name}}.dmg)
-        BODY=$( echo $JSON | jq -c --arg version "${{ inputs.build-version }}" '. + { "version": $version }' )
-        echo "initial body: $BODY"
-        BODY=$( echo $BODY | jq -c --arg file "$B64_CONTENT" '. + { "file": $file }' )
-        BODY="{\"version\": $BODY}"
+        # Create a temporary file for the JSON payload
+        TEMP_JSON=$(mktemp)
+        
+        # Base64 encode the file directly to a temporary file
+        base64 -i "bin/${{inputs.build-name}}.dmg" > temp_b64.txt
 
-        # Then make the curl request
+        # Create the initial JSON structure
+        echo $JSON | jq -c --arg version "${{ inputs.build-version }}" '. + { "version": $version }' > "$TEMP_JSON"
+
+        # Use jq with slurp to read the base64 content from file
+        jq -c --rawfile file temp_b64.txt '.file = $file' "$TEMP_JSON" > "${TEMP_JSON}.tmp"
+        mv "${TEMP_JSON}.tmp" "$TEMP_JSON"
+
+        # Wrap in the final structure
+        jq -c '{ version: . }' "$TEMP_JSON" > "${TEMP_JSON}.tmp"
+        mv "${TEMP_JSON}.tmp" "$TEMP_JSON"
+  
+        # Make the curl request using the temporary file
         curl -X POST \
-          -H "Content-Type: application/json" \
-          -H "x-app-version-handshake: $HANDSHAKE" \
-          -d "$BODY" \
-          $URL
+        -H "Content-Type: application/json" \
+        -H "x-app-version-handshake: $HANDSHAKE" \
+        -d "@$TEMP_JSON" \
+        "$URL"
+
+        # Clean up temporary files
+        rm -f "$TEMP_JSON" temp_b64.txt
     # Windows signing
     - name: Sign Windows binaries
       shell: powershell
