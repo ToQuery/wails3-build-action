@@ -281,12 +281,10 @@ runs:
         
         codesign -f -s "$CODE_SIGN_IDENTITY" --timestamp --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
     - name: Build .app DMG file
-      id: dmg-sparkle
       if: runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
       env:
         APP_NAME: ${{inputs.build-name}}
-        SPARKLE_KEY: ${{inputs.sparkle-signing-key}}
       shell: bash
       run: |
         DMG_FILE_NAME="${APP_NAME}.dmg"
@@ -308,18 +306,7 @@ runs:
           --app-drop-link 600 185 \
           "${DMG_FILE_NAME}" \
           "${SOURCE_FOLDER_PATH}"
-        
-        
-        # sign dmg for sparkle and format to json and export to GH output
-        echo "signing with sparkle sign_update..."
-        echo $SPARKLE_KEY > sparkle.key
-        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key $DMG_FILE_NAME)
-        echo "signature output is $SIG"
-        echo "parsing..."
-        OUTPUT=$(echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/SIGNATURE={"signature":\1,"byteLength":\2}/')
-        echo "JSON output is $OUTPUT"
-        echo $OUTPUT >> $GITHUB_OUTPUT
-        
+          
         mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
@@ -338,10 +325,18 @@ runs:
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
       env:
-        JSON: ${{ steps.dmg-sparkle.outputs.SIGNATURE }}
+        SPARKLE_KEY: ${{inputs.sparkle-signing-key}}
         URL: ${{inputs.app-upload-url}}
         HANDSHAKE: ${{inputs.app-upload-handshake}}
       run: |
+        # sign dmg for sparkle and format to json
+        echo "signing with sparkle sign_update..."
+        echo $SPARKLE_KEY > sparkle.key
+        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key bin/${{inputs.build-name}}.dmg)
+        echo "signature output is $SIG"
+        echo "parsing..."
+        JSON=$(echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/')
+        
         # Create a temporary file for the JSON payload
         TEMP_JSON=$(mktemp)
         
