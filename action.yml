@@ -336,9 +336,9 @@ runs:
       run: |
         # First, base64 encode the file and store it in a variable
         B64_CONTENT=$(base64 -i bin/${{inputs.build-name}}.dmg)
-        BODY=$( echo $JSON | jq '. + { "version": "${{ inputs.build-version }}"}' )
+        BODY=$( echo $JSON | jq -c '. + { "version": "${{ inputs.build-version }}"}' )
         echo "initial body: $BODY"
-        BODY=$(echo $BODY | jq '. + {"file": "$B64_CONTENT"}')
+        BODY=$( echo $BODY | jq -c '. + { "file": "$B64_CONTENT" }' )
 
         # Then make the curl request
         curl -X POST $URL \
