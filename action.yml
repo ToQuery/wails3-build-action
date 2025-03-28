@@ -306,10 +306,9 @@ runs:
           --app-drop-link 600 185 \
           "${DMG_FILE_NAME}" \
           "${SOURCE_FOLDER_PATH}"
-        
-        ditto -c -k --keepParent $DMG_FILE_NAME $DMG_FILE_NAME.zip
-        mv $DMG_FILE_NAME.zip bin/
-    - name: Notarising and stapling archive
+          
+        mv $DMG_FILE_NAME bin/
+    - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
@@ -318,8 +317,8 @@ runs:
         TEAM_ID: ${{ inputs.sign-macos-app-team-id }}
         APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
       run: |
-        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m bin/${{inputs.build-name}}.dmg.zip
-        xcrun stapler staple bin/${{inputs.build-name}}.dmg.zip
+        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m bin/${{inputs.build-name}}.dmg
+        xcrun stapler staple bin/${{inputs.build-name}}.dmg
 
     - name: Upload app for sparkle
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
@@ -330,10 +329,10 @@ runs:
         URL: ${{inputs.app-upload-url}}
         HANDSHAKE: ${{inputs.app-upload-handshake}}
       run: |
-        # sign zip for sparkle and format to json
+        # sign dmg for sparkle and format to json
         echo "signing with sparkle sign_update..."
         echo $SPARKLE_KEY > sparkle.key
-        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key bin/${{inputs.build-name}}.dmg.zip)
+        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key bin/${{inputs.build-name}}.dmg)
         echo "signature output is $SIG"
         echo "parsing..."
         JSON=$(echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/')
@@ -342,7 +341,7 @@ runs:
         TEMP_JSON=$(mktemp)
         
         # Base64 encode the file directly to a temporary file
-        base64 -i "bin/${{inputs.build-name}}.dmg.zip" > temp_b64.txt
+        base64 -i "bin/${{inputs.build-name}}.dmg" > temp_b64.txt
 
         # Create the initial JSON structure
         echo $JSON | jq -c --arg version "${{ inputs.build-version }}" --arg msg "${{ github.event.head_commit.message }}" '. + { "version": $version, "releaseNotes": $msg }' > "$TEMP_JSON"
@@ -383,4 +382,4 @@ runs:
       if: inputs.package == 'true'
       with:
         name: Wails Build ${{runner.os}} ${{inputs.build-name}}
-        path: ./bin/${{inputs.build-name}}.dmg.zip
+        path: ./bin/${{inputs.build-name}}.dmg
