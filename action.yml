@@ -339,6 +339,7 @@ runs:
         BODY=$( echo $JSON | jq -c '. + { "version": "${{ inputs.build-version }}"}' )
         echo "initial body: $BODY"
         BODY=$( echo $BODY | jq -c '. + { "file": "$B64_CONTENT" }' )
+        BODY='{"version": $BODY}'
 
         # Then make the curl request
         curl -X POST $URL \
