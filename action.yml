@@ -341,7 +341,7 @@ runs:
         base64 -i "bin/${{inputs.build-name}}.dmg" > temp_b64.txt
 
         # Create the initial JSON structure
-        echo $JSON | jq -c --arg version "${{ inputs.build-version }}" '. + { "version": $version }' > "$TEMP_JSON"
+        echo $JSON | jq -c --arg version "${{ inputs.build-version }}" --arg msg "${{ github.event.head_commit.message }}" '. + { "version": $version, "releaseNotes": $msg }' > "$TEMP_JSON"
 
         # Use jq with slurp to read the base64 content from file
         jq -c --rawfile file temp_b64.txt '.file = $file' "$TEMP_JSON" > "${TEMP_JSON}.tmp"
