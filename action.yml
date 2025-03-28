@@ -308,7 +308,9 @@ runs:
         SIG=$(./sparkle/bin/sign_update -f ./sparkle.key $DMG_FILE_NAME)
         echo "signature output is $SIG"
         echo "parsing..."
-        echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/' >> $GITHUB_OUTPUT
+        OUTPUT=$(echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/SIGNATURE={"signature":\1,"byteLength":\2}/')
+        echo "JSON output is $OUTPUT"
+        echo $OUTPUT >> $GITHUB_OUTPUT
         
         mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
@@ -334,7 +336,7 @@ runs:
       run: |
         # First, base64 encode the file and store it in a variable
         B64_CONTENT=$(base64 -i bin/${{inputs.build-name}}.dmg)
-        BODY=$( echo $JSON | jq '. + { "version": "${{ inputs.build-tags }}", "file": "$B64_CONTENT" }')
+        BODY=$( echo $JSON | jq '. + { "version": "${{ inputs.build-tags }}", "file": "$B64_CONTENT" } ' )
 
         # Then make the curl request
         curl -X POST $URL \
