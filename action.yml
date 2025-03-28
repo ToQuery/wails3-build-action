@@ -326,7 +326,7 @@ runs:
         xcrun stapler staple bin/${{inputs.build-name}}.dmg
 
     - name: Upload app for sparkle
-      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
+      if: false && runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
       env:
