@@ -336,16 +336,16 @@ runs:
       run: |
         # First, base64 encode the file and store it in a variable
         B64_CONTENT=$(base64 -i bin/${{inputs.build-name}}.dmg)
-        BODY=$( echo $JSON | jq -c '. + { "version": "${{ inputs.build-version }}"}' )
+        BODY=$( echo $JSON | jq -c --arg version "${{ inputs.build-version }}" '. + { "version": $version }' )
         echo "initial body: $BODY"
-        BODY=$( echo $BODY | jq -c ". + { \"file\": \"$B64_CONTENT\" }" )
+        BODY=$( echo $BODY | jq -c --arg file "$B64_CONTENT" '. + { "file": $file }' )
         BODY="{\"version\": $BODY}"
 
         # Then make the curl request
         curl -X POST \
-          -H 'Content-Type: application/json' \
-          -H 'x-app-version-handshake: $HANDSHAKE' \
-          -d $BODY \
+          -H "Content-Type: application/json" \
+          -H "x-app-version-handshake: $HANDSHAKE" \
+          -d "$BODY" \
           $URL
     # Windows signing
     - name: Sign Windows binaries
