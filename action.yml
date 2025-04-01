@@ -252,6 +252,9 @@ runs:
       run: wails3 package
       shell: bash
     - name: Import Code-Signing Certificates for macOS
+      env:
+        VITE_SERVER_CLOUD_API_URL: ${{secrets.VITE_SERVER_CLOUD_API_URL}}
+        VITE_ML_API_URL: ${{secrets.VITE_ML_API_URL}}
       if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
       uses: Apple-Actions/import-codesign-certs@v1
       with:
