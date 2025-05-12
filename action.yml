@@ -332,6 +332,7 @@ runs:
         # sign dmg for sparkle and format to json
         echo "signing with sparkle sign_update..."
         echo $SPARKLE_KEY > sparkle.key
+        cat ./sparkle.key
         SIG=$(./sparkle/bin/sign_update -f ./sparkle.key bin/${{inputs.build-name}}.dmg)
         echo "signature output is $SIG"
         echo "parsing..."
