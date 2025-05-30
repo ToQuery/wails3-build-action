@@ -4,6 +4,10 @@ branding:
   icon: 'box'
   color: 'purple'
 inputs:
+  production:
+    description: "PRODUCTION env var for wails build"
+    default: "false"
+    required: false
   build:
     description: "Platform to build for"
     required: false
@@ -246,6 +250,7 @@ runs:
     - name: Package App
       if: inputs.build == 'true'
       env:
+        PRODUCTION: ${{inputs.production}}
         BUILD_OPTIONS: ${{ steps.build_options.outputs.BUILD_OPTIONS }}
         LDFLAGS: ${{inputs.build-ldflags}}
       working-directory: ${{ inputs.app-working-directory }}
