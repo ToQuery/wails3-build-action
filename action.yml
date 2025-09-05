@@ -1,5 +1,5 @@
-name: "Wails Build Action"
-description: "Creates a wails binary"
+name: "Wails3 Build Action"
+description: "Creates a wails3 binary"
 branding:
   icon: 'box'
   color: 'purple'
