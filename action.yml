@@ -86,7 +86,7 @@ inputs:
   node-version:
     description: "Node js version"
     required: false
-    default: "18.x"
+    default: "20.x"
   deno-build:
     description: "This gets run into bash, use the full command"
     required: false
@@ -204,11 +204,20 @@ runs:
         cache: ${{ inputs.build-cache }}
         cache-dependency-path: 'go.sum'
         go-version: ${{ inputs.go-version }}
-    - name: Install Garble
-      if: inputs.build-obfuscate == 'true'
-      run: go install mvdan.cc/garble@latest
-      shell: bash
+#    - name: Install Garble
+#      if: inputs.build-obfuscate == 'true'
+#      run: go install mvdan.cc/garble@latest
+#      shell: bash
     - run: go version
+      shell: bash
+    # Setup and configure Node And npm
+    - name: Setup Node
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+    - run: node -v
+      shell: bash
+    - run: npm -v
       shell: bash
     # (Optional) Setup and configure Deno
     - name: Setup Deno
