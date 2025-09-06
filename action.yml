@@ -221,11 +221,10 @@ runs:
         version: ${{ inputs.pnpm-version }}
         run_install: false
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
-        run_install: false
-        cache: 'pnpm'
+        # cache: 'pnpm'
     - run: node -v
       shell: bash
     - run: npm -v
