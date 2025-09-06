@@ -87,6 +87,10 @@ inputs:
     description: "Node js version"
     required: false
     default: "20.x"
+  pnpm-version:
+    description: "Pnpm version"
+    required: false
+    default: "latest-10"
   deno-build:
     description: "This gets run into bash, use the full command"
     required: false
@@ -210,12 +214,17 @@ runs:
 #      shell: bash
     - run: go version
       shell: bash
-    # Setup and configure Node And npm
-    - name: Setup Node
-      uses: wyvox/action-setup-pnpm@v3
+    # Setup and configure Node And pnpm
+#    - uses: pnpm/action-setup@v4
+#      name: Install pnpm
+#      with:
+#        version: ${{ inputs.pnpm-version }}
+#        run_install: false
+    - uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        run_install: false # 是否自动执行 pnpm install，false 表示不自动
+        run_install: false
+        cache: 'pnpm'
     - run: node -v
       shell: bash
     - run: npm -v
