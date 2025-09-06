@@ -1,16 +1,15 @@
-20/02/2025 - Wails Version 2.10.0 is problematic, please use `wails-version: "v2.9.0"` & report the bug if you get issues, tyvm <3
 
-07/02/2025 - Please use `dAppServer/wails-build-action@main` AND star the repo to get updated on V3, the readme refers to a future version
+> Only Wails v3
 
-# dAppServer/wails-build-action@v2
+# ToQuery/wails3-build-action@v3
 GitHub action to build Wails.io: the action will install GoLang and NodeJS and run a build.
-This will be used on a [Wails.io](https://wails.io) v2 project.
+This will be used on a [Wails.io](https://v3alpha.wails.io/) v3 project.
 
 By default, the action will build and upload the results to Git Hub; on a tagged build, it will also upload to the release.
 
 # Default build
 ```yaml
-- uses: dAppServer/wails-build-action@v3
+- uses: ToQuery/wails3-build-action@v3
   with:
     build-name: wailsApp
     build-platform: linux/amd64
@@ -19,7 +18,7 @@ By default, the action will build and upload the results to Git Hub; on a tagged
 ## Build with No uploading
 
 ```yaml
-- uses: dAppServer/wails-build-action@v3
+- uses: ToQuery/wails3-build-action@v3
   with:
     build-name: wailsApp
     build-platform: linux/amd64
@@ -27,32 +26,31 @@ By default, the action will build and upload the results to Git Hub; on a tagged
 ```
 ## GitHub Action Options
 
-| Name                                 | Default              | Description                                        |
-|--------------------------------------|----------------------|----------------------------------------------------|
-| `build-name`                         | none, required input | The name of the binary                             |
-| `build-obfuscate`                    | `false`              | Obfuscate the binary                               |
-| `build`                              | `true`               | Runs `wails build` on your source                  |
-| `nsis`                               | `true`               | Runs `wails build` with or without -nsis           |
-| `sign`                               | `false`              | After build, signs and creates signed installers   |
-| `package`                            | `true`               | Upload workflow artifacts & publish release on tag |
-| `build-platform`                     | `darwin/universal`   | Platform to build for                              |
-| `build-tags`                         | ''                   | Build tags to pass to Go compiler. Must be quoted. |
-| `wails-version`                      | `latest`             | Wails version to use                               |
-| `wails-build-webview2`               | `download`           | Webview2 installing [download,embed,browser,error] |
-| `go-version`                         | `1.18`               | Version of Go to use                               |
-| `node-version`                       | `16.x`               | Node js version                                    |
-| `deno-build`                         | ''                   | Deno compile command                               |
-| `deno-working-directory`             | `.`                  | Working directory of your [Deno](https://deno.land/) server|
-| `deno-version`                       | `v1.20.x`            | Deno version to use                                |
-| `sign-macos-app-id`                  | ''                   | ID of the app signing cert                         |
-| `sign-macos-apple-password`          | ''                   | MacOS Apple password                               |
-| `sign-macos-app-cert`                | ''                   | MacOS Application Certificate                      |
-| `sign-macos-app-cert-password`       | ''                   | MacOS Application Certificate Password             |
-| `sign-macos-installer-id`            | ''                   | MacOS Installer Certificate id                     |
-| `sign-macos-installer-cert`          | ''                   | MacOS Installer Certificate                        |
-| `sign-macos-installer-cert-password` | ''                   | MacOS Installer Certificate Password               |
-| `sign-windows-cert`                  | ''                   | Windows Signing Certificate                        |
-| `sign-windows-cert-passowrd`         | ''                   | Windows Signing Certificate Password               |
+| Name                                 | Default              | Description                                                 |
+|--------------------------------------|----------------------|-------------------------------------------------------------|
+| `build-name`                         | none, required input | The name of the binary                                      |
+| `build-obfuscate`                    | `false`              | Obfuscate the binary                                        |
+| `build`                              | `true`               | Runs `wails build` on your source                           |
+| `sign`                               | `false`              | After build, signs and creates signed installers            |
+| `package`                            | `true`               | Upload workflow artifacts & publish release on tag          |
+| `build-platform`                     | `darwin/universal`   | Platform to build for                                       |
+| `build-tags`                         | ''                   | Build tags to pass to Go compiler. Must be quoted.          |
+| `wails-version`                      | `latest`             | Wails version to use                                        |
+| `go-version`                         | `1.25`               | Version of Go to use                                        |
+| `node-version`                       | `16.x`               | Node js version                                             |
+| `pnpm-version`                       | `10`                 | pnpm js version                                             |
+| `deno-build`                         | ''                   | Deno compile command                                        |
+| `deno-working-directory`             | `.`                  | Working directory of your [Deno](https://deno.land/) server |
+| `deno-version`                       | `v1.20.x`            | Deno version to use                                         |
+| `sign-macos-app-id`                  | ''                   | ID of the app signing cert                                  |
+| `sign-macos-apple-password`          | ''                   | MacOS Apple password                                        |
+| `sign-macos-app-cert`                | ''                   | MacOS Application Certificate                               |
+| `sign-macos-app-cert-password`       | ''                   | MacOS Application Certificate Password                      |
+| `sign-macos-installer-id`            | ''                   | MacOS Installer Certificate id                              |
+| `sign-macos-installer-cert`          | ''                   | MacOS Installer Certificate                                 |
+| `sign-macos-installer-cert-password` | ''                   | MacOS Installer Certificate Password                        |
+| `sign-windows-cert`                  | ''                   | Windows Signing Certificate                                 |
+| `sign-windows-cert-passowrd`         | ''                   | Windows Signing Certificate Password                        |
 
 
 
@@ -78,7 +76,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: dAppServer/wails-build-action@v3
+      - uses: ToQuery/wails3-build-action@v3
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
@@ -90,7 +88,7 @@ jobs:
 You need to make two gon configuration files, this is because we need to sign and notarize the .app before making an installer with it.
 
 ```yaml
-  - uses: dAppServer/wails-build-action@v3
+  - uses: ToQuery/wails3-build-action@v3
     with:
       build-name: wailsApp
       sign: true
