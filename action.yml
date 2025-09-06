@@ -82,7 +82,7 @@ inputs:
   go-version:
     description: "Version of Go to use"
     required: false
-    default: "1.23"
+    default: "1.25"
   node-version:
     description: "Node js version"
     required: false
@@ -252,16 +252,10 @@ runs:
       run: brew install create-dmg jq
       shell: bash
     # Building step
-#    - name: Set App Version & Updates
-#      if: inputs.build == 'true'
-#      env:
-#        VERSION: ${{ inputs.build-version }}
-#        APPCAST_URL: ${{inputs.appcast-url}}
-#      run: |
-#        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
-#        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
-#        /usr/libexec/PlistBuddy -c "Set :SUFeedURL $APPCAST_URL" build/darwin/Info.plist
-#      shell: bash
+    - name: Set App Version & Updates
+      if: inputs.build == 'true'
+      run: wails3 task common:update:build-assets
+      shell: bash
     - name: Add Linux perms
       if: inputs.build == 'true' && runner.os  == 'Linux'
       working-directory: ${{ inputs.app-working-directory }}
@@ -306,34 +300,34 @@ runs:
         codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
         
         codesign -f -s "$CODE_SIGN_IDENTITY" --timestamp --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
-    - name: Build .app DMG file
-      if: runner.os == 'macOS'
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        APP_NAME: ${{inputs.build-name}}
-      shell: bash
-      run: |
-        DMG_FILE_NAME="${APP_NAME}.dmg"
-        VOLUME_NAME="${APP_NAME}"
-        SOURCE_FOLDER_PATH="bin/"
-        
-        # remove loose binary
-        rm "bin/${APP_NAME}"
-
-        # Create the DMG
-        create-dmg \
-          --volname "${VOLUME_NAME}" \
-          --background "build/darwin/installer_background.png" \
-          --window-pos 200 120 \
-          --window-size 800 400 \
-          --icon-size 100 \
-          --icon "${APP_NAME}.app" 200 190 \
-          --hide-extension "${APP_NAME}.app" \
-          --app-drop-link 600 185 \
-          "${DMG_FILE_NAME}" \
-          "${SOURCE_FOLDER_PATH}"
-          
-        mv $DMG_FILE_NAME bin/
+#    - name: Build .app DMG file
+#      if: runner.os == 'macOS'
+#      working-directory: ${{ inputs.app-working-directory }}
+#      env:
+#        APP_NAME: ${{inputs.build-name}}
+#      shell: bash
+#      run: |
+#        DMG_FILE_NAME="${APP_NAME}.dmg"
+#        VOLUME_NAME="${APP_NAME}"
+#        SOURCE_FOLDER_PATH="bin/"
+#
+#        # remove loose binary
+#        rm "bin/${APP_NAME}"
+#
+#        # Create the DMG
+#        create-dmg \
+#          --volname "${VOLUME_NAME}" \
+#          --background "build/darwin/installer_background.png" \
+#          --window-pos 200 120 \
+#          --window-size 800 400 \
+#          --icon-size 100 \
+#          --icon "${APP_NAME}.app" 200 190 \
+#          --hide-extension "${APP_NAME}.app" \
+#          --app-drop-link 600 185 \
+#          "${DMG_FILE_NAME}" \
+#          "${SOURCE_FOLDER_PATH}"
+#
+#        mv $DMG_FILE_NAME bin/
     - name: Notarising and stapling DMG
       if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
       shell: bash
