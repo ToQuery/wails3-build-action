@@ -239,7 +239,7 @@ runs:
       run: |
         /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
-        /usr/libexec/PlistBuddy -c "Set :SUFeedURL $APPCAST_URL" build/darwin/Info.plist
+#        /usr/libexec/PlistBuddy -c "Set :SUFeedURL $APPCAST_URL" build/darwin/Info.plist
       shell: bash
     - name: Add Linux perms
       if: inputs.build == 'true' && runner.os  == 'Linux'
