@@ -212,12 +212,14 @@ runs:
       shell: bash
     # Setup and configure Node And npm
     - name: Setup Node
-      uses: actions/setup-node@v5
+      uses: wyvox/action-setup-pnpm@v3
       with:
         node-version: ${{ inputs.node-version }}
     - run: node -v
       shell: bash
     - run: npm -v
+      shell: bash
+    - run: pnpm -v
       shell: bash
     # (Optional) Setup and configure Deno
     - name: Setup Deno
