@@ -215,17 +215,16 @@ runs:
     - run: go version
       shell: bash
     # Setup and configure Node And pnpm
-#    - uses: pnpm/action-setup@v4
-#      name: Install pnpm
-#      with:
-#        version: ${{ inputs.pnpm-version }}
-#        run_install: false
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
     - name: Install Node.js
       uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
         # cache: 'pnpm'
-      run: corepack enable pnpm
     - run: node -v
       shell: bash
     - run: npm -v
