@@ -215,6 +215,7 @@ runs:
       uses: wyvox/action-setup-pnpm@v3
       with:
         node-version: ${{ inputs.node-version }}
+        run_install: false # 是否自动执行 pnpm install，false 表示不自动
     - run: node -v
       shell: bash
     - run: npm -v
