@@ -1,4 +1,12 @@
-.idea
-build/bin
-node_modules
+.task
+bin
 frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+
+
+frontend/bindings/
+
+.idea/
+frontend/.idea/
