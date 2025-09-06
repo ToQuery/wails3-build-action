@@ -1,13 +1,15 @@
-
 > Only Wails v3
 
 # ToQuery/wails3-build-action@v3
+
 GitHub action to build Wails.io: the action will install GoLang and NodeJS and run a build.
 This will be used on a [Wails.io](https://v3alpha.wails.io/) v3 project.
 
-By default, the action will build and upload the results to Git Hub; on a tagged build, it will also upload to the release.
+By default, the action will build and upload the results to GitHub; on a tagged build, it will also upload to the
+release.
 
 # Default build
+
 ```yaml
 - uses: ToQuery/wails3-build-action@v3
   with:
@@ -24,42 +26,47 @@ By default, the action will build and upload the results to Git Hub; on a tagged
     build-platform: linux/amd64
     package: false
 ```
+
 ## GitHub Action Options
 
-| Name                                 | Default              | Description                                                 |
-|--------------------------------------|----------------------|-------------------------------------------------------------|
-| `build-name`                         | none, required input | The name of the binary                                      |
-| `build-obfuscate`                    | `false`              | Obfuscate the binary                                        |
-| `build`                              | `true`               | Runs `wails build` on your source                           |
-| `sign`                               | `false`              | After build, signs and creates signed installers            |
-| `package`                            | `true`               | Upload workflow artifacts & publish release on tag          |
-| `build-platform`                     | `darwin/universal`   | Platform to build for                                       |
-| `build-tags`                         | ''                   | Build tags to pass to Go compiler. Must be quoted.          |
-| `wails-version`                      | `latest`             | Wails version to use                                        |
-| `go-version`                         | `1.25`               | Version of Go to use                                        |
-| `node-version`                       | `16.x`               | Node js version                                             |
-| `pnpm-version`                       | `10`                 | pnpm js version                                             |
-| `deno-build`                         | ''                   | Deno compile command                                        |
-| `deno-working-directory`             | `.`                  | Working directory of your [Deno](https://deno.land/) server |
-| `deno-version`                       | `v1.20.x`            | Deno version to use                                         |
-| `sign-macos-app-id`                  | ''                   | ID of the app signing cert                                  |
-| `sign-macos-apple-password`          | ''                   | MacOS Apple password                                        |
-| `sign-macos-app-cert`                | ''                   | MacOS Application Certificate                               |
-| `sign-macos-app-cert-password`       | ''                   | MacOS Application Certificate Password                      |
-| `sign-macos-installer-id`            | ''                   | MacOS Installer Certificate id                              |
-| `sign-macos-installer-cert`          | ''                   | MacOS Installer Certificate                                 |
-| `sign-macos-installer-cert-password` | ''                   | MacOS Installer Certificate Password                        |
-| `sign-windows-cert`                  | ''                   | Windows Signing Certificate                                 |
-| `sign-windows-cert-passowrd`         | ''                   | Windows Signing Certificate Password                        |
+| Name                    | Default              | Description                                        |
+|-------------------------|----------------------|----------------------------------------------------|
+| `go-version`            | `1.25`               | Version of Go to use                               |
+| `wails3-version`        | `latest`             | Wails version to use                               |
+| `build-name`            | none, required input | The name of the binary                             |
+| `build-obfuscate`       | `false`              | Obfuscate the build using Garble                   |
+| `build-platform`        | `darwin/universal`   | Platform to build for                              |
+| `build-cache`           | `true`               | Cache the build                                    |
+| `package`               | `true`               | Upload workflow artifacts & publish release on tag |
 
+### Node Config
 
+| Name           | Default | Description     |
+|----------------|---------|-----------------|
+| `node-build`   | `true`  | Node.js version |
+| `node-version` | `20.x`  | Node.js version |
+
+### pnpm Config
+
+| Name           | Default | Description     |
+|----------------|---------|-----------------|
+| `pnpm-build`   | `true`  | Node.js version |
+| `pnpm-version` | `10`    | pnpm version    |
+
+### Deno Config
+
+| Name                     | Default   | Description                        |
+|--------------------------|-----------|------------------------------------|
+| `deno-build`             | 'false'   | Deno compile command to run        |
+| `deno-version`           | `v1.20.x` | Deno version to use                |
+| `deno-working-directory` | `.`       | Working directory for Deno command |
 
 ## Example Build
 
 ```yaml
 name: Wails build
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -67,13 +74,13 @@ jobs:
       fail-fast: false
       matrix:
         build: [
-          {name: wailsTest, platform: linux/amd64, os: ubuntu-latest},
-          {name: wailsTest, platform: windows/amd64, os: windows-latest},
-          {name: wailsTest, platform: darwin/universal, os: macos-latest}
+          { name: wailsTest, platform: linux/amd64, os: ubuntu-latest },
+          { name: wailsTest, platform: windows/amd64, os: windows-latest },
+          { name: wailsTest, platform: darwin/universal, os: macos-latest }
         ]
     runs-on: ${{ matrix.build.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ToQuery/wails3-build-action@v3
@@ -81,78 +88,4 @@ jobs:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
           build-obfuscate: true
-```
-
-## MacOS Code Signing
-
-You need to make two gon configuration files, this is because we need to sign and notarize the .app before making an installer with it.
-
-```yaml
-  - uses: ToQuery/wails3-build-action@v3
-    with:
-      build-name: wailsApp
-      sign: true
-      build-platform: darwin/universal
-      sign-macos-apple-password: ${{ secrets.APPLE_PASSWORD }}
-      sign-macos-app-id: ${{ secrets.MACOS_DEVELOPER_CERT_ID }}
-      sign-macos-app-cert: ${{ secrets.MACOS_DEVELOPER_CERT }}
-      sign-macos-app-cert-password: ${{ secrets.MACOS_DEVELOPER_CERT_PASSWORD }}
-      sign-macos-installer-id: ${{ secrets.MACOS_INSTALLER_CERT_ID }}
-      sign-macos-installer-cert: ${{ secrets.MACOS_INSTALLER_CERT }}
-      sign-macos-installer-cert-password: ${{ secrets.MACOS_INSTALLER_CERT_PASSWORD }}
-```
-
-`build/darwin/gon-sign.json`
-```json
-{
-  "source" : ["./build/bin/wailsApp.app"],
-  "bundle_id" : "com.wails.app",
-  "apple_id": {
-    "username": "username",
-    "password": "@env:APPLE_PASSWORD"
-  },
-  "sign" :{
-    "application_identity" : "Developer ID Application: XXXXXXXX (XXXXXX)",
-    "entitlements_file": "./build/darwin/entitlements.plist"
-  },
-  "dmg" :{
-    "output_path":  "./build/bin/wailsApp.dmg",
-    "volume_name":  "Lethean"
-  }
-}
-```
-`build/darwin/gon-notarize.json`
-```json
-{
-  "notarize": [{
-    "path": "./build/bin/wailsApp.pkg",
-    "bundle_id": "com.wails.app",
-    "staple": true
-  },{
-    "path": "./build/bin/wailsApp.app.zip",
-    "bundle_id": "com.wails.app",
-    "staple": false
-  }],
-  "apple_id": {
-    "username": "USER name",
-    "password": "@env:APPLE_PASSWORD"
-  }
-}
-```
-`build/darwin/entitlements.plist`
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>com.apple.security.app-sandbox</key>
-  <true/>
-  <key>com.apple.security.network.client</key>
-  <true/>
-  <key>com.apple.security.network.server</key>
-  <true/>
-  <key>com.apple.security.files.user-selected.read-write</key>
-  <true/>
-</dict>
-</plist>
 ```

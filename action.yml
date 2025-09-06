@@ -4,381 +4,149 @@ branding:
   icon: 'box'
   color: 'purple'
 inputs:
-  production:
-    description: "PRODUCTION env var for wails build"
-    default: "false"
-    required: false
-  build:
-    description: "Platform to build for"
-    required: false
-    default: "true"
-  sign:
-    description: "Sign the build"
-    required: false
-    default: "false"
-  sign-sparkle:
-    description: "Sign the sparkle framework"
-    required: false
-  sparkle-signing-key:
-    description: "Signing key for Sparkle"
-    required: false
-    default: "true"
-  app-upload-url:
-    description: "URL to send appcasts"
-    required: false
-  app-upload-handshake:
-    description: "handshake for app upload"
-    required: false
-    default: "true"
-  notarize:
-    description: "notarize the build"
-    required: false
-    default: "false"
-  package:
-    description: "Uploads workflow & uploads tag builds to a release"
-    required: false
-    default: "true"
-  build-name:
-    description: "The name of the binary file"
-    required: true
-  build-cache:
-    description: "Cache the build"
-    required: false
-    default: "true"
-  build-platform:
-    description: "Platform to build for"
-    required: false
-    default: "darwin/universal"
-  build-version:
-    description: "Version of app being built"
-    required: false
-    default: "1.0.0"
-  build-tags:
-    description: "Build tags to pass to Go compiler. Must be quoted. Space or comma (but not both) separated"
-    required: false
-    default: "false"
-  build-obfuscate:
-    description: "Obfuscate the build"
-    required: false
-    default: "false"
-  wails3-version:
-    description: "Wails version to use"
-    required: false
-    default: "latest"
   go-version:
     description: "Version of Go to use"
     required: false
     default: "1.25"
+  go-archs:
+    description: ""
+    required: false
+    default: "amd64, arm64"
+  wails3-version:
+    description: "Wails version to use"
+    required: false
+    default: "latest"
+
+
+  build-cache:
+    description: "Cache the build"
+    required: false
+    default: "true"
+  build-obfuscate:
+    description: "Obfuscate the build"
+    required: false
+    default: "false"
+
+  node-build:
+    description: "This gets run into bash, use the full command"
+    required: false
+    default: "true"
   node-version:
     description: "Node js version"
     required: false
     default: "20.x"
+
+  pnpm-build:
+    description: "This gets run into bash, use the full command"
+    required: false
+    default: "false"
   pnpm-version:
     description: "Pnpm version"
     required: false
     default: "10"
+
   deno-build:
     description: "This gets run into bash, use the full command"
     required: false
     default: ""
-  app-working-directory:
-    description: "This gets run into bash, use the full command"
-    required: false
-    default: "."
-  deno-working-directory:
-    description: "This gets run into bash, use the full command"
-    required: false
-    default: "."
   deno-version:
     description: "Deno version to use"
     required: false
     default: "v1.20.x"
-  sign-macos-app-id:
-    description: "MacOS Application Certificate id"
+  deno-working-directory:
+    description: "This gets run into bash, use the full command"
     required: false
-    default: ''
-  sign-macos-app-email:
-    description: "Apple ID email"
+    default: "."
+
+  package:
+    description: "Uploads workflow & uploads tag builds to a release"
     required: false
-    default: ''
-  sign-macos-app-team-id:
-    description: "Apple ID team"
+    default: "true"
+
+  package-dmg:
+    description: "Uploads workflow & uploads tag builds to a release"
     required: false
-    default: ''
-  sign-macos-apple-password:
-    description: "MacOS Apple password"
+    default: "false"
+  package-nsis:
+    description: "Uploads workflow & uploads tag builds to a release"
     required: false
-    default: ''
-  sign-macos-app-cert:
-    description: "MacOS Application Certificate"
-    required: false
-    default: ''
-  sign-macos-app-cert-password:
-    description: "MacOS Application Certificate Password"
-    required: false
-    default: ''
-  sign-macos-installer-id:
-    description: "MacOS Installer Certificate id"
-    required: false
-    default: ''
-  sign-macos-installer-cert:
-    description: "MacOS Installer Certificate"
-    required: false
-    default: ''
-  sign-macos-installer-cert-password:
-    description: "MacOS Installer Certificate Password"
-    required: false
-    default: ''
-  sign-windows-cert:
-    description: "Windows Signing Certificate"
-    required: false
-    default: ''
-  sign-windows-cert-password:
-    description: "Windows Signing Certificate Password"
-    required: false
-    default: ''
+    default: "false"
 
 runs:
   using: "composite"
   steps:
-    - name: Linux Discovery
-      if: runner.os == 'Linux'
-      id: linux_discovery
-      run: |
-        sudo apt-get -yq update
-        DISTRO=$(lsb_release -rs) # Get the distribution version (e.g., "22.04", "24.04")
-        if [[ "$DISTRO" == "20.04" ]]; then
-          sudo apt-get -yq install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
-        elif [[ "$DISTRO" == "22.04" ]]; then
-          sudo apt-get -yq install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
-        elif [[ "$DISTRO" == "24.04" ]]; then
-          sudo apt-get -yq install libgtk-3-0 libwebkit2gtk-4.1-dev gcc-aarch64-linux-gnu
-        else
-          echo "Unsupported Linux distribution: $DISTRO"
-          exit 1 # Fail the workflow if the distribution is not supported
-        fi
-        echo "DISTRO=$DISTRO" >> "$GITHUB_OUTPUT"
-      shell: bash
-    - name: Setup Build Options
-      id: build_options
-      shell: bash
-      env:
-        DISTRO: ${{ steps.linux_discovery.outputs.DISTRO }}
-      run: |
-        build_options=""
-        if ${{ inputs.build-obfuscate == 'true' }}; then
-          build_options+=' -obfuscated'
-        fi
-        if [[ "${{ inputs.build-tags }}" != "false" ]]; then
-          tags_string="${{ inputs.build-tags }}"
-          if [[ "$DISTRO" == '24.04' ]]; then
-            tags_string+=" webkit2_41"
-          fi
-          build_options+=" -tags $tags_string" 
-        elif [[ "${{ inputs.build-tags }}" == "false" && "$DISTRO" == '24.04' ]]; then 
-          build_options+=" -tags webkit2_41"
-        fi
-        if ${{ inputs.nsis == 'true' }}; then
-          build_options+=' -nsis'
-        fi
-        echo "BUILD_OPTIONS=$build_options" >> "$GITHUB_OUTPUT"
     # Setup and configure GoLang
     - name: Setup GoLang
       uses: actions/setup-go@v5
-      if: inputs.wails-dev-build == 'false'
       with:
         check-latest: true
         cache: ${{ inputs.build-cache }}
         cache-dependency-path: 'go.sum'
         go-version: ${{ inputs.go-version }}
+    - name: Run Go Version
+      run: go version
+      shell: bash
+
     - name: Install Garble
       if: inputs.build-obfuscate == 'true'
-      run: go install mvdan.cc/garble@latest && EXPORT OBFUSCATE=true
+      run: go install mvdan.cc/garble@latest
       shell: bash
-    - run: go version
-      shell: bash
+      env:
+        OBFUSCATE: ${{ inputs.build-obfuscate }}
+
     # Setup and configure Node And pnpm
-    - uses: pnpm/action-setup@v4
-      name: Install pnpm
-      with:
-        version: ${{ inputs.pnpm-version }}
-        run_install: false
     - name: Install Node.js
+      if: inputs.node-build == 'true'
       uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
-        # cache: 'pnpm'
-    - run: node -v
+    - name: Run Node Version & Npm Version
+      if: inputs.node-build == 'true'
+      run: node -v && npm -v
       shell: bash
-    - run: npm -v
+
+    - name: Install pnpm
+      if: inputs.pnpm-build == 'true'
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
+    - name: Run Pnpm Version
+      if: inputs.pnpm-build == 'true'
+      run: pnpm -v
       shell: bash
-    - run: pnpm -v
-      shell: bash
+
     # (Optional) Setup and configure Deno
     - name: Setup Deno
       uses: denoland/setup-deno@v2
-      if: inputs.deno-build != ''
+      if: inputs.deno-build == 'true'
       with:
         deno-version: ${{inputs.deno-version}}
     - name: Run Deno Command
-      if: inputs.deno-build != ''
+      if: inputs.deno-build == 'true'
       shell: bash
       working-directory: ${{inputs.deno-working-directory}}
       run: ${{inputs.deno-build}}
+
     # install wails
     - name: Install Wails
-      if: inputs.build == 'true' && inputs.wails-dev-build == 'false'
       run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{inputs.wails3-version}}
       shell: bash
-#    - name: Install macOS Wails deps
-#      if: runner.os == 'macOS'
-#      run: brew install create-dmg jq
-#      shell: bash
+
     # Building step
-    - name: Set App Version & Updates
+    - name: Set App Build Info
       if: inputs.build == 'true'
       run: wails3 task common:update:build-assets
       shell: bash
-    - name: Add Linux perms
-      if: inputs.build == 'true' && runner.os  == 'Linux'
-      working-directory: ${{ inputs.app-working-directory }}
-      run: chmod +x build/bin/*
-      shell: bash
-    # Package and Sign MacOS
-    - name: Package App
-      if: inputs.build == 'true'
-      working-directory: ${{ inputs.app-working-directory }}
+
+    # Wails3 Package
+    - name: Wails3 Package
       run: wails3 package
       shell: bash
-    - name: Import Code-Signing Certificates for macOS
-      if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
-      uses: Apple-Actions/import-codesign-certs@v1
-      with:
-        keychain-password: ${{ inputs.sign-macos-apple-password }}
-        p12-file-base64: ${{ inputs.sign-macos-app-cert }}
-        p12-password: ${{ inputs.sign-macos-app-cert-password }}
-    - name: Import Code-Signing Certificates for macOS Installer
-      if: runner.os == 'macOS' && inputs.sign != 'false' && startsWith(github.ref, 'refs/tags/')
-      uses: Apple-Actions/import-codesign-certs@v1
-      with:
-        keychain-password: ${{ inputs.sign-macos-apple-password }}
-        p12-file-base64: ${{ inputs.sign-macos-installer-cert }}
-        p12-password: ${{ inputs.sign-macos-installer-cert-password }}
-        create-keychain: false
-    - name: Sign sparkle framework
-      if: runner.os == 'macOS' && inputs.sign-sparkle != 'false' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        CODE_SIGN_IDENTITY: ${{ inputs.sign-macos-app-id }}
-      run: |
-        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc
-        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime --preserve-metadata=entitlements bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc
-        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
-        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app
-        codesign -f -s "$CODE_SIGN_IDENTITY" -o runtime bin/${{inputs.build-name}}.app/Contents/Frameworks/Sparkle.framework
-        
-        codesign -f -s "$CODE_SIGN_IDENTITY" --timestamp --entitlements build/darwin/entitlements.plist -o runtime bin/${{inputs.build-name}}.app
-#    - name: Build .app DMG file
-#      if: runner.os == 'macOS'
-#      working-directory: ${{ inputs.app-working-directory }}
-#      env:
-#        APP_NAME: ${{inputs.build-name}}
-#      shell: bash
-#      run: |
-#        DMG_FILE_NAME="${APP_NAME}.dmg"
-#        VOLUME_NAME="${APP_NAME}"
-#        SOURCE_FOLDER_PATH="bin/"
-#
-#        # remove loose binary
-#        rm "bin/${APP_NAME}"
-#
-#        # Create the DMG
-#        create-dmg \
-#          --volname "${VOLUME_NAME}" \
-#          --background "build/darwin/installer_background.png" \
-#          --window-pos 200 120 \
-#          --window-size 800 400 \
-#          --icon-size 100 \
-#          --icon "${APP_NAME}.app" 200 190 \
-#          --hide-extension "${APP_NAME}.app" \
-#          --app-drop-link 600 185 \
-#          "${DMG_FILE_NAME}" \
-#          "${SOURCE_FOLDER_PATH}"
-#
-#        mv $DMG_FILE_NAME bin/
-    - name: Notarising and stapling DMG
-      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        APPLE_ID: ${{ inputs.sign-macos-app-email }}
-        TEAM_ID: ${{ inputs.sign-macos-app-team-id }}
-        APPLE_DEVELOPER_PASSWORD: ${{ inputs.sign-macos-apple-password }}
-      run: |
-        xcrun notarytool submit --apple-id $APPLE_ID --team-id $TEAM_ID --password $APPLE_DEVELOPER_PASSWORD --wait --timeout 5m bin/${{inputs.build-name}}.dmg
-        xcrun stapler staple bin/${{inputs.build-name}}.dmg
-
-    - name: Upload app for sparkle
-      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.notarize != 'false' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      working-directory: ${{ inputs.app-working-directory }}
-      env:
-        SPARKLE_KEY: ${{inputs.sparkle-signing-key}}
-        URL: ${{inputs.app-upload-url}}
-        HANDSHAKE: ${{inputs.app-upload-handshake}}
-      run: |
-        # sign dmg for sparkle and format to json
-        echo "signing with sparkle sign_update..."
-        echo $SPARKLE_KEY > sparkle.key
-        SIG=$(./sparkle/bin/sign_update -f ./sparkle.key bin/${{inputs.build-name}}.dmg)
-        echo "signature output is $SIG"
-        echo "parsing..."
-        JSON=$(echo $SIG | sed -E 's/sparkle:edSignature=([^ ]*) length=(.*)/{"signature":\1,"byteLength":\2}/')
-        
-        # Create a temporary file for the JSON payload
-        TEMP_JSON=$(mktemp)
-        
-        # Base64 encode the file directly to a temporary file
-        base64 -i "bin/${{inputs.build-name}}.dmg" > temp_b64.txt
-
-        # Create the initial JSON structure
-        echo $JSON | jq -c --arg version "${{ inputs.build-version }}" --arg msg "${{ github.event.head_commit.message }}" '. + { "version": $version, "releaseNotes": $msg }' > "$TEMP_JSON"
-
-        # Use jq with slurp to read the base64 content from file
-        jq -c --rawfile file temp_b64.txt '.file = $file' "$TEMP_JSON" > "${TEMP_JSON}.tmp"
-        mv "${TEMP_JSON}.tmp" "$TEMP_JSON"
-
-        # Wrap in the final structure
-        jq -c '{ version: . }' "$TEMP_JSON" > "${TEMP_JSON}.tmp"
-        mv "${TEMP_JSON}.tmp" "$TEMP_JSON"
-  
-        # Make the curl request using the temporary file
-        curl -X POST \
-        -H "Content-Type: application/json" \
-        -H "x-app-version-handshake: $HANDSHAKE" \
-        -d "@$TEMP_JSON" \
-        "$URL"
-
-        # Clean up temporary files
-        rm -f "$TEMP_JSON" temp_b64.txt
-    # Windows signing
-    - name: Sign Windows binaries
-      shell: powershell
-      if: runner.os == 'Windows' && inputs.sign != 'false' && inputs.sign-windows-cert != ''
-      working-directory: ${{ inputs.app-working-directory }}
-      run: |
-        echo "Creating certificate file"
-        New-Item -ItemType directory -Path certificate
-        Set-Content -Path certificate\certificate.txt -Value '${{ inputs.sign-windows-cert }}'
-        certutil -decode certificate\certificate.txt certificate\certificate.pfx
-        echo "Signing our binaries"
-        & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ inputs.sign-windows-cert-password }}' .\build\bin\${{inputs.build-name}}.exe
-        echo "Signing Installer" & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ inputs.sign-windows-cert-password }}' .\build\bin\${{inputs.build-name}}-amd64-installer.exe
 
     # Upload build assets
     - uses: actions/upload-artifact@v4
       if: inputs.package == 'true'
       with:
-        name: Wails Build ${{runner.os}} ${{inputs.build-name}}
+        name: Wails Build ${{runner.os}} ${{inputs.go-archs}}
         path: ./bin/
