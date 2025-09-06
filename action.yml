@@ -87,6 +87,10 @@ inputs:
     description: "Node js version"
     required: false
     default: "20.x"
+  pnpm-version:
+    description: "Pnpm version"
+    required: false
+    default: "10"
   deno-build:
     description: "This gets run into bash, use the full command"
     required: false
@@ -211,14 +215,22 @@ runs:
     - run: go version
       shell: bash
     # Setup and configure Node And pnpm
-    - uses: actions/setup-node@v4
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
       with:
-        version: ${{ inputs.node-version }}
+        version: ${{ inputs.pnpm-version }}
         run_install: false
-#        cache: 'pnpm'
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        run_install: false
+        cache: 'pnpm'
     - run: node -v
       shell: bash
     - run: npm -v
+      shell: bash
+    - run: pnpm -v
       shell: bash
     # (Optional) Setup and configure Deno
     - name: Setup Deno
