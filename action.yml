@@ -215,15 +215,13 @@ runs:
     - run: go version
       shell: bash
     # Setup and configure Node And pnpm
-#    - uses: pnpm/action-setup@v4
-#      name: Install pnpm
-#      with:
-#        version: ${{ inputs.pnpm-version }}
-#        run_install: false
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
     - uses: actions/setup-node@v4
       with:
-        node-version: ${{ inputs.node-version }}
-        run_install: false
         cache: 'pnpm'
     - run: node -v
       shell: bash
