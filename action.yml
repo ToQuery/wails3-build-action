@@ -231,16 +231,16 @@ runs:
       run: brew install create-dmg jq
       shell: bash
     # Building step
-    - name: Set App Version & Updates
-      if: inputs.build == 'true'
-      env:
-        VERSION: ${{ inputs.build-version }}
-        APPCAST_URL: ${{inputs.appcast-url}}
-      run: |
-        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
+#    - name: Set App Version & Updates
+#      if: inputs.build == 'true'
+#      env:
+#        VERSION: ${{ inputs.build-version }}
+#        APPCAST_URL: ${{inputs.appcast-url}}
+#      run: |
+#        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" build/darwin/Info.plist
+#        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" build/darwin/Info.plist
 #        /usr/libexec/PlistBuddy -c "Set :SUFeedURL $APPCAST_URL" build/darwin/Info.plist
-      shell: bash
+#      shell: bash
     - name: Add Linux perms
       if: inputs.build == 'true' && runner.os  == 'Linux'
       working-directory: ${{ inputs.app-working-directory }}
@@ -387,4 +387,4 @@ runs:
       if: inputs.package == 'true'
       with:
         name: Wails Build ${{runner.os}} ${{inputs.build-name}}
-        path: ./bin/${{inputs.build-name}}.dmg
+        path: ./bin/
