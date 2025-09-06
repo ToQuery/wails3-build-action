@@ -215,16 +215,17 @@ runs:
     - run: go version
       shell: bash
     # Setup and configure Node And pnpm
-    - uses: pnpm/action-setup@v4
-      name: Install pnpm
-      with:
-        version: ${{ inputs.pnpm-version }}
-        run_install: false
+#    - uses: pnpm/action-setup@v4
+#      name: Install pnpm
+#      with:
+#        version: ${{ inputs.pnpm-version }}
+#        run_install: false
     - name: Install Node.js
       uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
         # cache: 'pnpm'
+      run: corepack enable pnpm
     - run: node -v
       shell: bash
     - run: npm -v
@@ -247,10 +248,10 @@ runs:
       if: inputs.build == 'true' && inputs.wails-dev-build == 'false'
       run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{inputs.wails-version}}
       shell: bash
-    - name: Install macOS Wails deps
-      if: runner.os == 'macOS'
-      run: brew install create-dmg jq
-      shell: bash
+#    - name: Install macOS Wails deps
+#      if: runner.os == 'macOS'
+#      run: brew install create-dmg jq
+#      shell: bash
     # Building step
     - name: Set App Version & Updates
       if: inputs.build == 'true'
